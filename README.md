@@ -21,6 +21,28 @@ A FastAPI backend application that integrates with Google Cloud Vertex AI for re
 - Saves results to Firestore
 - Returns detailed feedback and scores
 
+### 4. **NEW: Scenario-Based Learning** ✨
+Employee onboarding through real-world case studies:
+- **Scenario Management**: Create scenarios from company experiences
+- **Solution Comparison**: AI-powered comparison with company solutions
+- **Feedback & Learning**: Detailed feedback highlighting strengths and gaps
+- **Progress Tracking**: Individual and team-wide learning metrics
+- **Task Completion Metrics**: Track learning progress with dashboards
+
+**New Endpoints:**
+- `POST /scenarios/create` - Create learning scenarios
+- `GET /scenarios` - Browse available scenarios  
+- `POST /scenarios/{id}/submit` - Submit and get feedback
+- `GET /employee/{id}/progress` - Track personal progress
+- `GET /team/progress` - View team analytics
+
+**Documentation:**
+- [Quick Start Guide](./SCENARIO_QUICKSTART.md)
+- [Complete API Docs](./SCENARIO_FEATURE.md)
+- [Architecture & Design](./SCENARIO_ARCHITECTURE.md)
+- [Example Scenarios](./SCENARIO_EXAMPLES.md)
+- [Implementation Summary](./SCENARIO_IMPLEMENTATION_SUMMARY.md)
+
 ## Setup
 
 ### Prerequisites
