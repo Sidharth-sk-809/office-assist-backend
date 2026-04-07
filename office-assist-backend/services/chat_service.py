@@ -2,11 +2,14 @@
 Chat service using Vertex AI Search (RAG).
 """
 from google.cloud import discoveryengine_v1 as discoveryengine
+from google.cloud import firestore
 from google.api_core.client_options import ClientOptions
 from typing import Dict, Optional
 import logging
 import os
 import uuid
+from vertexai.generative_models import GenerativeModel
+import vertexai
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +18,92 @@ PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 LOCATION = os.getenv("GCP_LOCATION", "global")
 DATA_STORE_ID = os.getenv("VERTEX_SEARCH_DATA_STORE_ID")
 SEARCH_ENGINE_ID = os.getenv("VERTEX_SEARCH_ENGINE_ID")
+
+if PROJECT_ID:
+    try:
+        vertexai.init(project=PROJECT_ID, location="us-central1")
+    except Exception:
+        logger.warning("Vertex AI initialization for chat enrichment failed")
+
+db = firestore.Client(project=PROJECT_ID) if PROJECT_ID else None
+
+
+def _normalize_terms(text: str) -> set:
+    return {
+        token.strip(".,:;!?()[]{}\"'").lower()
+        for token in text.split()
+        if len(token.strip(".,:;!?()[]{}\"'")) > 3
+    }
+
+
+def _get_matching_scenarios(user_input: str, limit: int = 3) -> list:
+    if not db:
+        return []
+
+    query_terms = _normalize_terms(user_input)
+    if not query_terms:
+        return []
+
+    try:
+        docs = db.collection("scenarios").limit(25).stream()
+        ranked = []
+        for doc in docs:
+            data = doc.to_dict()
+            haystack = " ".join(
+                [
+                    data.get("title", ""),
+                    data.get("description", ""),
+                    data.get("technical_context", ""),
+                    data.get("challenges_faced", ""),
+                    " ".join(data.get("tags", [])),
+                ]
+            )
+            scenario_terms = _normalize_terms(haystack)
+            overlap = len(query_terms.intersection(scenario_terms))
+            if overlap:
+                ranked.append((overlap, data))
+
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        return [item[1] for item in ranked[:limit]]
+    except Exception as exc:
+        logger.warning(f"Scenario enrichment lookup failed: {exc}")
+        return []
+
+
+def _build_scenario_summary(user_input: str, scenarios: list) -> Optional[str]:
+    if not scenarios:
+        return None
+
+    try:
+        model = GenerativeModel("gemini-2.5-pro")
+        scenario_context = "\n\n".join(
+            [
+                (
+                    f"Title: {scenario.get('title')}\n"
+                    f"Description: {scenario.get('description')}\n"
+                    f"Technical Context: {scenario.get('technical_context')}\n"
+                    f"Challenges Faced: {scenario.get('challenges_faced')}\n"
+                    f"Company Solution: {scenario.get('company_solution')}\n"
+                    f"Lessons Learned: {scenario.get('lessons_learned')}"
+                )
+                for scenario in scenarios
+            ]
+        )
+        prompt = f"""
+        You are helping answer an employee question using real internal company scenarios.
+        Answer the question using only the scenario context below. Keep it practical and concise.
+
+        Question:
+        {user_input}
+
+        Scenario Context:
+        {scenario_context}
+        """
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as exc:
+        logger.warning(f"Scenario summary generation failed: {exc}")
+        return None
 
 
 async def query_rag(user_input: str, conversation_id: Optional[str] = None) -> Dict:
@@ -93,6 +182,8 @@ async def query_rag(user_input: str, conversation_id: Optional[str] = None) -> D
             ),
         )
         
+        scenario_matches = _get_matching_scenarios(user_input)
+
         # Execute the search
         response = client.search(request)
         
@@ -118,6 +209,14 @@ async def query_rag(user_input: str, conversation_id: Optional[str] = None) -> D
                     "title": title,
                     "uri": link
                 })
+
+        for scenario in scenario_matches:
+            sources.append(
+                {
+                    "title": f"Scenario: {scenario.get('title')}",
+                    "uri": f"scenario://{scenario.get('scenario_id')}",
+                }
+            )
         
         logger.info(f"Found {results_count} results")
         
@@ -154,6 +253,12 @@ async def query_rag(user_input: str, conversation_id: Optional[str] = None) -> D
             else:
                 answer = "I couldn't find any relevant information in the company documents. Please try rephrasing your question."
         
+        scenario_summary = _build_scenario_summary(user_input, scenario_matches)
+        if scenario_summary and answer:
+            answer = f"{answer}\n\nRelated company scenarios:\n{scenario_summary}"
+        elif scenario_summary:
+            answer = scenario_summary
+
         logger.info(f"RAG query successful for conversation: {conversation_id}")
         
         return {

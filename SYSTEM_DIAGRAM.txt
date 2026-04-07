@@ -1,0 +1,195 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    OFFICE ASSIST - HR TRAINING BOT SYSTEM                     ║
+║                         Complete Architecture Diagram                          ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            👥 USER INTERFACE                                 │
+│                         http://localhost:3000                                │
+│                                                                              │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐           │
+│  │   Login    │  │ Dashboard  │  │    Chat    │  │   Tasks    │  ...      │
+│  │  Session   │  │   Status   │  │  Policy    │  │  Grading   │           │
+│  │   Mgmt     │  │  Display   │  │    RAG     │  │  Submit    │           │
+│  └────────────┘  └────────────┘  └────────────┘  └────────────┘           │
+│                                                                              │
+│  Technologies: React 18, React Router, Axios, Vite                          │
+│  Features: Session persistence, Real-time updates, Responsive UI            │
+└────────────────────────────┬─────────────────────────────────────────────────┘
+                             │
+                             │ HTTP REST API
+                             │ (Proxied via Vite)
+                             │ /api -> localhost:8000
+                             │
+┌────────────────────────────▼─────────────────────────────────────────────────┐
+│                         🔧 BACKEND API SERVER                                │
+│                         http://localhost:8000                                │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────┐          │
+│  │                      FastAPI Application                      │          │
+│  │                      with CORS Enabled                        │          │
+│  └──────────────────────────────────────────────────────────────┘          │
+│                                                                              │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐               │
+│  │  GET /         │  │  POST /chat    │  │ POST /classify │               │
+│  │  Health Check  │  │  Policy Chat   │  │ Resume Upload  │               │
+│  └────────────────┘  └────────────────┘  └────────────────┘               │
+│                                                                              │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐               │
+│  │POST /submit-   │  │   Services:    │  │  Validation &  │               │
+│  │     task       │  │ - chat_service │  │ Error Handling │               │
+│  │  Task Grading  │  │ - classifier   │  │                │               │
+│  └────────────────┘  │ - task_grader  │  └────────────────┘               │
+│                      └────────────────┘                                     │
+│                                                                              │
+│  Tech Stack: FastAPI, Uvicorn, Pydantic, Python-multipart                  │
+└────────────────────────────┬─────────────────────────────────────────────────┘
+                             │
+                             │ Google Cloud APIs
+                             │ (Vertex AI, Firestore, Discovery Engine)
+                             │
+┌────────────────────────────▼─────────────────────────────────────────────────┐
+│                      ☁️  GOOGLE CLOUD PLATFORM                              │
+│                                                                              │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
+│  │   Vertex AI      │  │ Vertex AI Search │  │    Firestore     │         │
+│  │   (Gemini)       │  │   (Discovery)    │  │    Database      │         │
+│  ├──────────────────┤  ├──────────────────┤  ├──────────────────┤         │
+│  │ • Text Gen       │  │ • RAG Engine     │  │ • Task Storage   │         │
+│  │ • Resume Class   │  │ • Policy Docs    │  │ • Submissions    │         │
+│  │ • Task Grading   │  │ • Embeddings     │  │ • Metadata       │         │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                              DATA FLOW                                         ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+1. LOGIN & SESSION
+   User → Frontend → LocalStorage → Session ID Generated
+   
+2. POLICY CHAT
+   User Question → Frontend → POST /chat → RAG Service → Vertex AI Search
+   → Policy Documents → AI Response → Frontend Display
+
+3. TASK SUBMISSION
+   User Task → Frontend → POST /submit-task → Grading Service → Gemini AI
+   → Evaluation → Firestore → Score & Feedback → Frontend Display
+
+4. RESUME ANALYSIS
+   PDF Upload → Frontend → POST /classify → Classifier Service → Gemini AI
+   → Resume Analysis → Classification Result → Frontend Display
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                           SESSION MANAGEMENT                                   ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Session Data Structure                              │
+│                                                                              │
+│  {                                                                           │
+│    name: "John Doe",                    ← User full name                    │
+│    email: "john@company.com",           ← User email                        │
+│    role: "new-joiner",                  ← User role                         │
+│    loginTime: "2026-04-06T20:00:00Z",   ← Session start time                │
+│    conversationId: "conv_123456789"     ← Unique conversation ID            │
+│  }                                                                           │
+│                                                                              │
+│  Storage: Browser LocalStorage (key: "userSession")                         │
+│  Persistence: Survives page refresh, browser close/reopen                   │
+│  Scope: Per-browser, per-domain                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                            KEY FEATURES                                        ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+✅ Session Management    - Persistent user sessions with unique IDs
+✅ Policy Chat Bot       - RAG-powered Q&A on company policies  
+✅ Task Grading          - AI evaluation of training submissions
+✅ Resume Analysis       - Experience level classification
+✅ API Health Check      - Real-time backend connectivity status
+✅ Error Handling        - Comprehensive error messages with solutions
+✅ Responsive Design     - Works on desktop, tablet, mobile
+✅ CORS Enabled          - Cross-origin requests supported
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                          PORTS & ENDPOINTS                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+Frontend:  http://localhost:3000
+Backend:   http://localhost:8000
+
+Routes:
+  /                → Login page
+  /dashboard       → Main dashboard
+  /chat            → Policy chat interface
+  /tasks           → Task submission
+  /resume          → Resume upload
+
+API Endpoints:
+  GET  /           → Health: {"status":"healthy"}
+  POST /chat       → Chat: {user_input, conversation_id}
+  POST /classify   → Resume: FormData(file)
+  POST /submit-task → Task: FormData(task_text, file)
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                         PROJECT STRUCTURE                                      ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+ASSIST-Project/
+│
+├── 📁 office-assist-backend/      Backend API
+│   ├── main.py                   FastAPI app (CORS enabled)
+│   ├── services/                 Business logic
+│   │   ├── chat_service.py       RAG chat
+│   │   ├── resume_classifier.py  Resume AI
+│   │   └── task_grader.py        Task grading
+│   ├── requirements.txt          Python deps
+│   └── .env                      Config
+│
+├── 📁 office-assist-frontend/     React Frontend
+│   ├── src/
+│   │   ├── App.jsx               Main app + routing
+│   │   ├── components/           UI components
+│   │   │   └── Header.jsx        Navigation
+│   │   ├── pages/                Page components
+│   │   │   ├── Login.jsx         Login + session
+│   │   │   ├── Dashboard.jsx     Dashboard
+│   │   │   ├── Chat.jsx          Chat interface
+│   │   │   ├── TaskSubmission.jsx Task form
+│   │   │   └── ResumeUpload.jsx  Resume upload
+│   │   └── services/
+│   │       └── api.js            Backend client
+│   ├── vite.config.js            Dev server + proxy
+│   └── package.json              Dependencies
+│
+└── 📚 Documentation
+    ├── STARTUP_GUIDE.md          Setup instructions
+    ├── PROJECT_OVERVIEW.md       Architecture
+    ├── QUICK_REFERENCE.md        Quick commands
+    ├── COMPLETION_SUMMARY.md     This summary
+    └── SYSTEM_DIAGRAM.txt        This diagram
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                          QUICK START                                           ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+Terminal 1 (Backend):
+  $ cd office-assist-backend
+  $ source venv/bin/activate
+  $ python main.py
+
+Terminal 2 (Frontend):
+  $ cd office-assist-frontend
+  $ npm run dev
+
+Browser:
+  → Open http://localhost:3000
+  → Login with your details
+  → Start using features!
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                       STATUS: ✅ COMPLETE                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════╝

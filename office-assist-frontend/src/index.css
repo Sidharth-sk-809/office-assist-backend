@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-color: #8d78ff;
+  --primary-dark: #7761ec;
+  --secondary-color: #68c39a;
+  --danger-color: #ff7e7e;
+  --app-bg: #121212;
+  --panel-bg: rgba(36, 36, 38, 0.9);
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  --text-primary: #f4f1eb;
+  --text-secondary: #b9b0a5;
+  --text-muted: #b7b0aa;
+  --text-dim: #8b837d;
+  --bg-primary: rgba(26, 26, 28, 0.94);
+  --bg-secondary: rgba(255, 255, 255, 0.04);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.28);
+}
+
+body {
+  font-family: 'Manrope', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Utility Classes */
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.btn {
+  padding: 0.85rem 1.4rem;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  font-size: 0.96rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #b8a7ff 100%);
+  color: #141414;
+  box-shadow: 0 16px 36px rgba(141, 120, 255, 0.28);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 38px rgba(141, 120, 255, 0.34);
+}
+
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 1.75rem;
+  padding: 1.5rem;
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.input {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(141, 120, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.input::placeholder {
+  color: var(--text-dim);
+}
+
+select.input option {
+  color: #111111;
+}
+
+.textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Alert */
+.alert {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.alert-success {
+  background-color: rgba(104, 195, 154, 0.14);
+  color: #c8f3de;
+  border: 1px solid rgba(104, 195, 154, 0.28);
+}
+
+.alert-error {
+  background-color: rgba(255, 126, 126, 0.12);
+  color: #ffd0d0;
+  border: 1px solid rgba(255, 126, 126, 0.26);
+}
+
+.alert-info {
+  background-color: rgba(141, 120, 255, 0.12);
+  color: #e2dbff;
+  border: 1px solid rgba(141, 120, 255, 0.24);
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.04em;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 0.55rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: var(--text-dim);
+}
+
+h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+}
+
+code {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.4rem;
+}
+
+@media (max-width: 1100px) {
+  .container {
+    padding: 0;
+  }
+}

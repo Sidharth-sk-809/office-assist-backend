@@ -26,6 +26,11 @@ from services.scenario_service import (
     get_employee_progress,
     get_team_progress,
 )
+from services.pdf_scenario_service import (
+    submit_pdf_scenario_solution,
+    get_pdf_scenario,
+    list_available_pdf_sources,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -139,6 +144,47 @@ class TeamProgressResponse(BaseModel):
     top_performers: list
 
 
+# ==================== PDF SCENARIO MODELS ====================
+
+class SubmitPDFScenarioSolutionRequest(BaseModel):
+    pdf_source: str  # e.g., "gs://bucket/Product Document.pdf"
+    employee_id: str
+    employee_name: str
+    employee_solution: str
+    scenario_index: Optional[int] = None
+
+
+class PDFScenarioResponse(BaseModel):
+    title: str
+    problem: str
+    category: str
+    difficulty: str
+    key_points: list
+
+
+class PDFScenarioComparisonResponse(BaseModel):
+    submission_id: str
+    scenario_title: str
+    scenario_category: str
+    scenario_difficulty: str
+    score: float
+    alignment_summary: str
+    strengths: list
+    gaps: list
+    references_to_doc: list
+    improvement_suggestions: str
+    feedback: str
+    pdf_solution: str
+    submitted_at: str
+
+
+class PDFSourceResponse(BaseModel):
+    pdf_source: str
+    total_scenarios: int
+    created_at: str
+    scenarios_sample: list
+
+
 # Health check endpoint
 @app.get("/")
 async def root():
@@ -234,6 +280,8 @@ async def chat_endpoint(request: ChatRequest):
 @app.post("/submit-task", response_model=TaskSubmissionResponse)
 async def submit_task_endpoint(
     task_text: Optional[str] = Form(None),
+    employee_id: Optional[str] = Form(None),
+    employee_name: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None)
 ):
     """
@@ -288,7 +336,9 @@ async def submit_task_endpoint(
         # Call grading service
         result = await grade_task(
             submission_content=submission_content,
-            file_name=file_name
+            file_name=file_name,
+            employee_id=employee_id,
+            employee_name=employee_name,
         )
         
         return TaskSubmissionResponse(**result)
@@ -630,6 +680,153 @@ async def get_team_progress_endpoint():
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch team progress: {str(e)}"
+        )
+
+
+# ==================== PDF-BASED SCENARIO ENDPOINTS ====================
+
+@app.get("/pdf-sources")
+async def list_pdf_sources_endpoint():
+    """
+    List all available PDF sources that contain scenarios.
+    
+    Examples: Product Document.pdf, Welcome Aboard.pdf
+    
+    Returns:
+        List of available PDF sources with scenario metadata
+    """
+    try:
+        logger.info("Fetching available PDF sources")
+        
+        result = await list_available_pdf_sources()
+        
+        return {
+            "pdf_sources": result,
+            "total_sources": len(result),
+        }
+    
+    except Exception as e:
+        logger.error(f"Error listing PDF sources: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list PDF sources: {str(e)}"
+        )
+
+
+@app.get("/pdf-scenarios/{pdf_source}")
+async def get_pdf_scenario_endpoint(
+    pdf_source: str,
+    scenario_index: Optional[int] = None,
+):
+    """
+    Get a scenario from a PDF file.
+    
+    Args:
+        pdf_source: PDF file path (e.g., "gs://bucket/Product Document.pdf" or "Welcome Aboard.pdf")
+        scenario_index: Optional specific scenario index, else returns random scenario
+        
+    Returns:
+        Scenario details (problem, category, difficulty, key points)
+        Note: Solution is NOT returned until employee submits their solution
+    """
+    try:
+        if not pdf_source or len(pdf_source.strip()) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF source cannot be empty"
+            )
+        
+        logger.info(f"Fetching PDF scenario from: {pdf_source}")
+        
+        result = await get_pdf_scenario(pdf_source, scenario_index)
+        
+        return result
+    
+    except ValueError as e:
+        logger.warning(f"PDF scenario not found: {str(e)}")
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error fetching PDF scenario: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch PDF scenario: {str(e)}"
+        )
+
+
+@app.post("/pdf-scenarios/submit")
+async def submit_pdf_scenario_solution_endpoint(
+    request: SubmitPDFScenarioSolutionRequest,
+):
+    """
+    Submit employee solution for a PDF-based scenario and get comparison.
+    
+    This endpoint:
+    1. Gets the scenario from PDF (or retrieves cached version)
+    2. Compares employee solution with solution in PDF
+    3. Returns score and feedback based on PDF content
+    
+    Args:
+        request: PDF source, employee details, and solution
+        
+    Returns:
+        Comparison results with score, strengths, gaps, and feedback
+    """
+    try:
+        if not request.pdf_source or len(request.pdf_source.strip()) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF source cannot be empty"
+            )
+        
+        if not request.employee_id or len(request.employee_id.strip()) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Employee ID cannot be empty"
+            )
+        
+        if not request.employee_name or len(request.employee_name.strip()) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Employee name cannot be empty"
+            )
+        
+        if not request.employee_solution or len(request.employee_solution.strip()) < 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Solution must be at least 50 characters"
+            )
+        
+        logger.info(
+            f"Submitting PDF scenario solution: {request.employee_name} "
+            f"from PDF: {request.pdf_source}"
+        )
+        
+        result = await submit_pdf_scenario_solution(
+            pdf_source=request.pdf_source,
+            employee_id=request.employee_id,
+            employee_name=request.employee_name,
+            employee_solution=request.employee_solution,
+            scenario_index=request.scenario_index,
+        )
+        
+        return result
+    
+    except ValueError as e:
+        logger.warning(f"Invalid PDF scenario submission: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting PDF scenario solution: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to submit solution: {str(e)}"
         )
 
 

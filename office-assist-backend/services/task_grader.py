@@ -54,7 +54,12 @@ Provide a detailed breakdown of the score and constructive feedback.
 """
 
 
-async def grade_task(submission_content: str, file_name: Optional[str] = None) -> Dict:
+async def grade_task(
+    submission_content: str,
+    file_name: Optional[str] = None,
+    employee_id: Optional[str] = None,
+    employee_name: Optional[str] = None,
+) -> Dict:
     """
     Grade a task submission using Gemini 1.5 Pro and save to Firestore.
     
@@ -70,7 +75,7 @@ async def grade_task(submission_content: str, file_name: Optional[str] = None) -
             raise ValueError("GCP_PROJECT_ID environment variable not set")
         
         # Initialize Gemini model
-        model = GenerativeModel("gemini-1.5-pro")
+        model = GenerativeModel("gemini-2.5-pro")
         
         # Create grading prompt
         prompt = f"""
@@ -130,6 +135,8 @@ async def grade_task(submission_content: str, file_name: Optional[str] = None) -
             "full_response": result_text,
             "submission_preview": submission_content[:500],
             "file_name": file_name,
+            "employee_id": employee_id,
+            "employee_name": employee_name,
             "timestamp": timestamp,
             "created_at": firestore.SERVER_TIMESTAMP
         }

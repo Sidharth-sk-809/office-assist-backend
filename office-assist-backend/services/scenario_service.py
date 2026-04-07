@@ -140,7 +140,7 @@ async def get_all_scenarios(
         query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
         
         # Get total count
-        total_count = len(query.stream())
+        total_count = sum(1 for _ in query.stream())
         
         # Apply pagination
         docs = query.offset(skip).limit(limit).stream()
@@ -316,7 +316,7 @@ async def _compare_solutions(
         Dictionary with comparison analysis
     """
     try:
-        model = GenerativeModel("gemini-1.5-pro")
+        model = GenerativeModel("gemini-2.5-pro")
         
         comparison_prompt = f"""
         You are an expert technical evaluator comparing an employee's solution 
@@ -445,16 +445,25 @@ async def get_employee_progress(employee_id: str) -> Dict:
         if not db:
             raise ValueError("Firestore not initialized")
         
-        # Get all submissions for this employee
+        # Get scenario submissions for this employee
         submissions = (
             db.collection("submissions")
             .where("employee_id", "==", employee_id)
             .stream()
         )
-        
+
         submission_list = [doc.to_dict() for doc in submissions]
-        
         total_scenarios_submitted = len(submission_list)
+
+        # Get standard task submissions for this employee
+        task_docs = (
+            db.collection("task_submissions")
+            .where("employee_id", "==", employee_id)
+            .stream()
+        )
+        task_list = [doc.to_dict() for doc in task_docs]
+        total_standard_tasks_completed = len(task_list)
+        total_tasks_completed = total_scenarios_submitted + total_standard_tasks_completed
         
         # Calculate statistics
         scores = [s.get("comparison_score", 0) for s in submission_list]
@@ -474,9 +483,17 @@ async def get_employee_progress(employee_id: str) -> Dict:
             reverse=True,
         )[:5]
         
+        recent_task_submissions = sorted(
+            task_list,
+            key=lambda x: x.get("timestamp", ""),
+            reverse=True,
+        )[:5]
+
         return {
             "employee_id": employee_id,
-            "total_tasks_completed": total_scenarios_submitted,
+            "total_tasks_completed": total_tasks_completed,
+            "scenario_tasks_completed": total_scenarios_submitted,
+            "standard_tasks_completed": total_standard_tasks_completed,
             "average_score": round(average_score, 2),
             "score_distribution": {
                 "excellent": excellent,  # 90-100
@@ -496,8 +513,16 @@ async def get_employee_progress(employee_id: str) -> Dict:
                 }
                 for s in recent_submissions
             ],
+            "recent_task_submissions": [
+                {
+                    "task_id": t.get("task_id"),
+                    "score": t.get("score"),
+                    "submitted_at": t.get("timestamp"),
+                }
+                for t in recent_task_submissions
+            ],
             "progress_percentage": min(
-                (total_scenarios_submitted / 20) * 100, 100
+                (total_tasks_completed / 20) * 100, 100
             ),  # Assuming 20 scenarios for 100%
         }
     

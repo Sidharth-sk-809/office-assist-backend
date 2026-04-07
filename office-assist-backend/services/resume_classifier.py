@@ -39,7 +39,7 @@ async def classify_resume(pdf_content: bytes, filename: str) -> Dict:
             raise ValueError("GCP_PROJECT_ID environment variable not set")
         
         # Initialize Gemini model
-        model = GenerativeModel("gemini-1.5-pro")
+        model = GenerativeModel("gemini-2.5-pro")
         
         # Encode PDF content
         pdf_data = base64.b64encode(pdf_content).decode('utf-8')

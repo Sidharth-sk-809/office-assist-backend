@@ -1,203 +1,319 @@
-# Office Assist API
+# 🚀 Onboarding Automation Assistant
 
-A FastAPI backend application that integrates with Google Cloud Vertex AI for resume classification, RAG-based chat, and task grading.
+An AI-powered platform that streamlines employee onboarding for **new joiners** and **HR managers**, automating hiring procedures from day one.
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-green.svg)](https://python.org)
+[![Node.js 16+](https://img.shields.io/badge/Node.js-16+-green.svg)](https://nodejs.org)
 
-### 1. Resume Classification (`/classify`)
-- Accepts PDF resume uploads
-- Uses Vertex AI Gemini to classify experience level (Junior/Mid/Senior)
-- Returns confidence score and reasoning
+---
 
-### 2. Company Policy Chat (`/chat`)
-- RAG-powered chat using Vertex AI Search
-- Queries company policy data store
-- Maintains conversation context
-- Returns answers with source references
+## 📋 Table of Contents
 
-### 3. Task Grading (`/submit-task`)
-- Accepts text or file submissions
-- Grades against Job Readiness rubric using Gemini 1.5 Pro
-- Saves results to Firestore
-- Returns detailed feedback and scores
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [Support](#support)
+- [License](#license)
 
-### 4. **NEW: Scenario-Based Learning** ✨
-Employee onboarding through real-world case studies:
-- **Scenario Management**: Create scenarios from company experiences
-- **Solution Comparison**: AI-powered comparison with company solutions
-- **Feedback & Learning**: Detailed feedback highlighting strengths and gaps
-- **Progress Tracking**: Individual and team-wide learning metrics
-- **Task Completion Metrics**: Track learning progress with dashboards
+---
 
-**New Endpoints:**
-- `POST /scenarios/create` - Create learning scenarios
-- `GET /scenarios` - Browse available scenarios  
-- `POST /scenarios/{id}/submit` - Submit and get feedback
-- `GET /employee/{id}/progress` - Track personal progress
-- `GET /team/progress` - View team analytics
+## Overview
 
-**Documentation:**
-- [Quick Start Guide](./SCENARIO_QUICKSTART.md)
-- [Complete API Docs](./SCENARIO_FEATURE.md)
-- [Architecture & Design](./SCENARIO_ARCHITECTURE.md)
-- [Example Scenarios](./SCENARIO_EXAMPLES.md)
-- [Implementation Summary](./SCENARIO_IMPLEMENTATION_SUMMARY.md)
+**Onboarding Automation Assistant** is a comprehensive solution designed to simplify and accelerate the employee onboarding process. It leverages AI to provide instant answers to policy questions, automate document processing, and track onboarding task completion—reducing manual HR workload while ensuring new hires have a smooth start.
 
-## Setup
+### Who Is This For?
+
+| Role | Benefits |
+|------|----------|
+| **New Joiners** | Get instant answers to policy questions, track onboarding tasks, and submit required documents easily |
+| **HR Managers** | Automate repetitive tasks, monitor onboarding progress, and reduce time-to-productivity for new hires |
+| **IT Admins** | Easy deployment with Docker, scalable architecture, and comprehensive API |
+
+---
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 💬 **AI Policy Assistant** | Natural language chatbot powered by RAG (Retrieval-Augmented Generation) to answer company policy questions instantly |
+| 📝 **Automated Task Management** | Create, assign, and track onboarding tasks with AI-powered completion grading |
+| 📄 **Smart Document Processing** | Upload and analyze resumes for experience classification and document validation |
+| 👥 **Session Management** | Secure, persistent sessions for new joiners with progress tracking |
+| 📊 **Real-time Dashboard** | Live status monitoring and onboarding progress analytics |
+| 🔔 **Notifications** | Automated reminders for pending tasks and deadlines |
+
+---
+
+## Quick Start
+
+Get up and running in under 5 minutes:
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/onboarding-assistant.git
+cd onboarding-assistant
+
+# Start Backend (Terminal 1)
+cd office-assist-backend
+source venv/bin/activate
+python main.py
+
+# Start Frontend (Terminal 2)
+cd office-assist-frontend
+npm run dev
+
+# Access the application
+open http://localhost:3000
+```
+
+---
+
+## Installation
 
 ### Prerequisites
-- Python 3.8+
-- Google Cloud Project with enabled APIs:
-  - Vertex AI API
-  - Firestore API
-  - Discovery Engine API
 
-### Installation
+- **Python** 3.8 or higher
+- **Node.js** 16 or higher
+- **Google Cloud Platform** account with:
+  - Vertex AI API enabled
+  - Firestore database
+  - Service account credentials
 
-1. Create and activate virtual environment:
+### Step 1: Backend Setup
+
 ```bash
+cd office-assist-backend
+
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-3. Set up Google Cloud credentials:
-```bash
+# Configure environment
+cp .env.example .env
+# Edit .env with your settings (see Configuration section)
+
+# Set GCP credentials
 export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account-key.json"
 ```
 
-4. Configure environment variables:
+### Step 2: Frontend Setup
+
 ```bash
-export GCP_PROJECT_ID="your-project-id"
-export GCP_LOCATION="us-central1"
-export VERTEX_SEARCH_DATA_STORE_ID="your-data-store-id"
-export VERTEX_SEARCH_ENGINE_ID="your-search-engine-id"
+cd office-assist-frontend
+
+# Install dependencies
+npm install
+
+# Optional: Configure API endpoint
+echo "VITE_API_URL=/api" > .env
 ```
 
-### Running the Application
+### Step 3: Verify Installation
 
-Development mode:
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Test backend health
+curl http://localhost:8000
+# Expected: {"status":"healthy","service":"Onboarding Assistant API"}
+
+# Open frontend
+open http://localhost:3000
+# Dashboard should display "API: Connected" in green
 ```
 
-Production mode:
+---
+
+## Usage
+
+### For New Joiners
+
+1. **Login** with your employee credentials provided by HR
+2. **View Dashboard** to see your onboarding progress and pending tasks
+3. **Ask Questions** using the AI Policy Assistant for instant answers about company policies
+4. **Complete Tasks** and submit them for automated grading
+5. **Upload Documents** like your resume for experience verification
+
+### For HR Managers
+
+1. **Monitor Progress** via the admin dashboard
+2. **Create Onboarding Plans** with customizable task checklists
+3. **Review Submissions** with AI-assisted grading suggestions
+4. **Generate Reports** on onboarding metrics and completion rates
+
+---
+
+## API Reference
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Health check and service status |
+| `/chat` | POST | Send questions to the AI policy assistant |
+| `/classify` | POST | Upload resume for experience classification |
+| `/submit-task` | POST | Submit completed onboarding tasks for grading |
+
+### Example: Ask a Policy Question
+
 ```bash
-python main.py
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is the leave policy for new employees?"}'
 ```
 
-## API Documentation
+---
 
-Once running, visit:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+## Configuration
 
-## API Endpoints
+### Backend Environment Variables
 
-### POST /classify
-Classify a resume's experience level.
+Create a `.env` file in `office-assist-backend/`:
 
-**Request:**
-- Content-Type: multipart/form-data
-- Body: PDF file
+```bash
+# Google Cloud Platform
+GCP_PROJECT_ID=your-project-id
+GCP_LOCATION=us-central1
+VERTEX_SEARCH_DATA_STORE_ID=your-data-store-id
 
-**Response:**
-```json
-{
-  "level": "Senior",
-  "confidence": 0.85,
-  "reasoning": "Candidate has 8+ years experience with leadership roles..."
-}
+# Server
+PORT=8000
+DEBUG=false
 ```
 
-### POST /chat
-Query company policies using RAG.
+### Frontend Environment Variables (Optional)
 
-**Request:**
-```json
-{
-  "user_input": "What is the vacation policy?",
-  "conversation_id": "optional-conversation-id"
-}
+Create a `.env` file in `office-assist-frontend/`:
+
+```bash
+VITE_API_URL=/api
 ```
 
-**Response:**
-```json
-{
-  "answer": "The company offers 15 days of PTO...",
-  "sources": [
-    {
-      "title": "Employee Handbook",
-      "uri": "gs://bucket/handbook.pdf"
-    }
-  ],
-  "conversation_id": "uuid"
-}
-```
-
-### POST /submit-task
-Submit a task for grading.
-
-**Request:**
-- Content-Type: multipart/form-data
-- Body: 
-  - task_text (optional): Text submission
-  - file (optional): File submission
-
-**Response:**
-```json
-{
-  "task_id": "uuid",
-  "score": 85.0,
-  "feedback": "Strong technical implementation...",
-  "timestamp": "2026-04-06T19:17:19.028Z"
-}
-```
-
-## Error Handling
-
-All endpoints include comprehensive error handling:
-- Input validation
-- Service-specific error messages
-- Proper HTTP status codes
-- Detailed logging
+---
 
 ## Project Structure
 
 ```
-office-assist/
-├── main.py                          # FastAPI application
-├── services/
-│   ├── __init__.py
-│   ├── resume_classifier.py        # Resume classification logic
-│   ├── chat_service.py              # RAG chat logic
-│   └── task_grader.py               # Task grading logic
-├── requirements.txt                 # Python dependencies
-└── README.md                        # This file
+onboarding-assistant/
+├── office-assist-backend/      # FastAPI backend with Vertex AI
+│   ├── main.py                 # Application entry point
+│   ├── requirements.txt        # Python dependencies
+│   └── services/               # Business logic modules
+├── office-assist-frontend/     # React frontend with Vite
+│   ├── src/                    # React components
+│   └── package.json            # Node dependencies
+├── docs/                       # Additional documentation
+│   ├── STARTUP_GUIDE.md        # Detailed setup instructions
+│   ├── PROJECT_OVERVIEW.md     # Architecture documentation
+│   └── QUICK_REFERENCE.md      # Command reference
+└── README.md                   # This file
 ```
 
-## Environment Variables
+---
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GCP_PROJECT_ID` | Google Cloud Project ID | Required |
-| `GCP_LOCATION` | GCP region | us-central1 |
-| `VERTEX_SEARCH_DATA_STORE_ID` | Vertex AI Search data store ID | Required for /chat |
-| `VERTEX_SEARCH_ENGINE_ID` | Vertex AI Search engine ID | Optional |
-| `PORT` | Server port | 8000 |
+## Tech Stack
 
-## Security Notes
+| Layer | Technologies |
+|-------|--------------|
+| **Frontend** | React 18, Vite, React Router, Axios, Lucide Icons |
+| **Backend** | FastAPI, Python 3.8+, Uvicorn |
+| **AI/ML** | Google Cloud Vertex AI, RAG with Discovery Engine |
+| **Database** | Google Cloud Firestore |
+| **Deployment** | Docker, Google Cloud Run |
 
-- Never commit service account keys
-- Use environment variables for sensitive data
-- Implement authentication/authorization for production
-- Validate all file uploads
-- Set appropriate CORS policies
+---
+
+## Deployment
+
+### Using Docker
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Or build individually
+docker build -t onboarding-backend ./office-assist-backend
+docker build -t onboarding-frontend ./office-assist-frontend
+```
+
+### Google Cloud Run
+
+```bash
+# Deploy backend
+cd office-assist-backend
+gcloud run deploy onboarding-backend --source .
+
+# Deploy frontend (after building)
+cd office-assist-frontend
+npm run build
+# Deploy dist/ to Cloud Storage or Cloud Run
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Backend won't start | Ensure virtual environment is activated and dependencies installed |
+| Frontend can't connect | Verify backend is running on port 8000; check CORS settings |
+| AI features not working | Check `GOOGLE_APPLICATION_CREDENTIALS` and GCP API enablement |
+
+For detailed troubleshooting, see [STARTUP_GUIDE.md](./docs/STARTUP_GUIDE.md).
+
+---
+
+## Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and development process.
+
+---
+
+## Support
+
+Need help? Here's how to get support:
+
+- 📖 **Documentation**: Check the [docs/](./docs/) folder
+- 🐛 **Bug Reports**: Open an [issue](https://github.com/your-org/onboarding-assistant/issues)
+- 💬 **Questions**: Start a [discussion](https://github.com/your-org/onboarding-assistant/discussions)
+- 📧 **Email**: contact@your-org.com
+
+---
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Acknowledgments
+
+- Google Cloud Vertex AI for powering our AI capabilities
+- The FastAPI and React communities for excellent frameworks
+
+---
+
+<p align="center">
+  <strong>Onboarding Automation Assistant</strong><br>
+  Empowering HR teams. Welcoming new talent. Automating the future of work.
+</p>
+
+<p align="center">
+  <sub>Built with ❤️ for seamless employee onboarding</sub>
+</p>
+
+**Version**: 1.0.0 | **Last Updated**: April 2026
